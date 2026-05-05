@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pymongo
+pytest
+pytest-cov
+httpx
+pydantic
+python-dotenv
+black
+flake8
+isort
+pip-audit
