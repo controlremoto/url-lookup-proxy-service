@@ -4,7 +4,7 @@ from src.services.url_lookup_service import UrlLookupService
 from src.models.url import UrlInfo
 from src.utils.logger import get_logger
 from src.utils.rate_limiter import rate_limiter
-from src.utils.url_utils import normalize_url
+from src.utils.url_utils import normalize_url, is_url_too_long
 from src.config.constants import URL_LENGTH_LIMIT, SEED_SOURCE, LOGGER_NAME
 
 app = FastAPI()
@@ -53,11 +53,11 @@ def get_url_info(
     headers = dict(request.headers)
     logger.info(f"Received request from {client_ip}, headers: {headers}")
     try:
-        url = normalize_url(hostname_and_port, original_path_and_query_string)
-        if len(url) > URL_LENGTH_LIMIT:
-            logger.error(f"URL too long: {url}")
+        norm_host, norm_path_query = normalize_url(hostname_and_port, original_path_and_query_string)
+        if is_url_too_long(norm_host, norm_path_query, URL_LENGTH_LIMIT):
+            logger.error(f"URL too long: host={norm_host}, path={norm_path_query}")
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="URL too long")
-        url_info = service.lookup(hostname_and_port, original_path_and_query_string)
+        url_info = service.lookup(norm_host, norm_path_query)
         if url_info:
             return {"data": url_info.dict(by_alias=True), "error": None}
         else:

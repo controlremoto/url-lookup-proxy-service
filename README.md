@@ -1,5 +1,6 @@
 # URL Lookup Service
 
+
 A production-ready, containerized Python API for malware URL lookups, using MongoDB for persistence.
 
 ## Features
@@ -8,7 +9,6 @@ A production-ready, containerized Python API for malware URL lookups, using Mong
 - SOLID, Clean Architecture
 - Logging & error handling
 - Containerized (Docker, Docker Compose)
-- 80%+ test coverage (pytest)
 - Follows PEP8 and project guidelines
 
 ## Quickstart
@@ -16,48 +16,88 @@ A production-ready, containerized Python API for malware URL lookups, using Mong
 ### Prerequisites
 - Docker & Docker Compose
 
-### Run Locally
+### Environment Variables
+
+| Variable              | Required | Default                  | Description                                 |
+|-----------------------|----------|--------------------------|---------------------------------------------|
+| MONGO_URI             | Yes      | mongodb://mongo:27017    | MongoDB connection string                   |
+| MONGO_DB_NAME         | No       | urllookup                | MongoDB database name                       |
+| MONGO_COLLECTION_NAME | No       | urls                     | MongoDB collection name                     |
+| MONGO_USERNAME        | No       | (empty)                  | MongoDB username (if using auth)            |
+| MONGO_PASSWORD        | No       | (empty)                  | MongoDB password (if using auth)            |
+| API_PORT              | No       | 8000                     | API server port                             |
+| LOG_LEVEL             | No       | INFO                     | Logging level (DEBUG, INFO, WARNING, etc.)  |
+| RATE_LIMIT            | No       | 10                       | Requests per window (rate limiter)          |
+| RATE_LIMIT_WINDOW     | No       | 60                       | Rate limit window (seconds)                 |
+| ENV_NAME              | No       | local                    | Environment name (local, uat, prod, etc.)   |
+
+### Local Development
+1. Create your `.env` and fill in your values.
+2. Start the stack:
+   ```sh
+   docker-compose up --build #Optionally add -d for detached mode
+   ```
+3. The API will be available at [http://localhost:8000](http://localhost:8000)
+
+### UAT/Production
+- Set environment variables via your CI/CD pipeline or GitHub Secrets (do not use `.env` in production).
+- Use the same variable names as above.
+
+## API Usage & Testing
+
+### Endpoint
+
+`GET /urlinfo/1/{hostname_and_port}/{original_path_and_query_string}`
+
+#### Example URLs (after seeding):
+- http://localhost:8000/urlinfo/1/malicious.com:80/bad
+- http://localhost:8000/urlinfo/1/good.com:80/safe
+
+### Example: Test with curl
+
 ```sh
-git clone <your-repo-url>
-cd url-lookup-proxy-service
-docker-compose up --build
+curl -i http://localhost:8000/urlinfo/1/malicious.com:80/bad
 ```
 
-API will be available at http://localhost:8000
+**Expected response:**
 
-### Run Tests
+```json
+HTTP/1.1 200 OK
+date: Wed, 06 May 2026 17:33:22 GMT
+server: uvicorn
+content-length: 189
+content-type: application/json
+
+{"data":{"_id":"69fb74e2ca83e0e6abb7351f","url":"http://malicious.com/bad","hostname":"malicious.com:80","path":"bad","is_malicious":true,"metadata":{"source":"startup-seed"}},"error":null}
+```
+
+#### Not found example:
+
 ```sh
-docker-compose run --rm app pytest --cov=src
+curl -i http://localhost:8000/urlinfo/1/unknown.com:80/unknown
 ```
 
-## Project Structure
-```
-src/
-  api/        # FastAPI endpoints
-  db/         # MongoDB access
-  models/     # Pydantic models
-  services/   # Business logic
-  utils/      # Logging, exceptions
+**Expected response:**
 
-tests/
-  unit/
-  integration/
-  fixtures/
+```json
+HTTP/1.1 200 OK
+date: Wed, 06 May 2026 17:34:28 GMT
+server: uvicorn
+content-length: 49
+content-type: application/json
+
+{"data":null,"error":"URL not found in database"}
 ```
 
-## Configuration
-- Environment variables (see `docker-compose.yml`)
-- `MONGO_URI` for MongoDB connection
+### Browser Testing
 
-## Linting & Formatting
-```sh
-black src
-flake8 src
-isort src
-```
+- Open [http://localhost:8000/urlinfo/1/malicious.com:80/bad](http://localhost:8000/urlinfo/1/malicious.com:80/bad) in your browser.
+- You should see a JSON response with the URL info if seeded, or `null` if not found.
 
-## Security
-- Run `pip-audit` to check for vulnerabilities
+## Multi-Environment & Secret Management
 
-## License
-MIT
+- **Local**: Uses `.env` file (never commit secrets!).
+- **UAT/Prod**: Use GitHub Secrets or CI/CD to inject environment variables.
+- **MongoDB Auth**: Set `MONGO_USERNAME` and `MONGO_PASSWORD` for secure deployments.
+
+See the table above for all supported environment variables.

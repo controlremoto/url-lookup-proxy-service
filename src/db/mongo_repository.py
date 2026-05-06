@@ -4,18 +4,34 @@ from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 from typing import Optional
 from src.models.url import UrlInfo
 from src.utils.logger import get_logger, log_json
-from src.config.constants import MONGO_URI_ENV, DB_NAME, COLLECTION_NAME, DB_TIMEOUT_MS, LOGGER_NAME
+import os
+from src.config.constants import (
+    MONGO_URI_ENV, MONGO_DB_NAME_ENV, MONGO_COLLECTION_NAME_ENV,
+    MONGO_USERNAME_ENV, MONGO_PASSWORD_ENV, DB_TIMEOUT_MS, LOGGER_NAME
+)
 import inspect
 
 logger = get_logger(LOGGER_NAME)
 
 class MongoRepository:
-    def __init__(self, uri: Optional[str] = None, db_name: str = DB_NAME, collection: str = COLLECTION_NAME):
+    def __init__(self, uri: Optional[str] = None, db_name: Optional[str] = None, collection: Optional[str] = None):
+        # Read from environment variables for multi-environment support
         self.uri = uri or os.getenv(MONGO_URI_ENV)
-        self.db_name = db_name
-        self.collection_name = collection
+        self.db_name = db_name or os.getenv(MONGO_DB_NAME_ENV, "urllookup")
+        self.collection_name = collection or os.getenv(MONGO_COLLECTION_NAME_ENV, "urls")
+        username = os.getenv(MONGO_USERNAME_ENV)
+        password = os.getenv(MONGO_PASSWORD_ENV)
+        # If username/password are set, add to URI
+        if username and password and self.uri and "@" not in self.uri:
+            # Insert credentials into URI
+            self.uri = self.uri.replace("mongodb://", f"mongodb://{username}:{password}@")
         self.client = MongoClient(self.uri, serverSelectionTimeoutMS=DB_TIMEOUT_MS)
         self.collection = self.client[self.db_name][self.collection_name]
+
+    """
+    MongoDB repository for URL information.
+    Provides methods to find URL info based on hostname and path.
+    """
 
     def find_url(self, hostname: str, path: str) -> Optional[UrlInfo]:
         try:
