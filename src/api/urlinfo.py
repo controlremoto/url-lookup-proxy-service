@@ -1,11 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Depends, status
 from src.db.mongo_repository import MongoRepository
 from src.services.url_lookup_service import UrlLookupService
 from src.models.url import UrlInfo
 from src.utils.logger import get_logger
+from src.utils.rate_limiter import rate_limiter
+from src.utils.url_utils import normalize_url
+from src.config.constants import URL_LENGTH_LIMIT, SEED_SOURCE, LOGGER_NAME
 
 app = FastAPI()
-logger = get_logger("urlinfo-api")
+logger = get_logger(LOGGER_NAME)
 
 # Dependency injection
 repository = MongoRepository()
@@ -22,14 +25,14 @@ def startup_event():
                 "hostname": "malicious.com:80",
                 "path": "bad",
                 "is_malicious": True,
-                "metadata": {"source": "startup-seed"}
+                "metadata": {"source": SEED_SOURCE}
             },
             {
                 "url": "http://good.com/safe",
                 "hostname": "good.com:80",
                 "path": "safe",
                 "is_malicious": False,
-                "metadata": {"source": "startup-seed"}
+                "metadata": {"source": SEED_SOURCE}
             }
         ]
         collection.insert_many(seed_data)
@@ -38,13 +41,29 @@ def startup_event():
         logger.info("Collection already populated. Skipping seed.")
 
 # API endpoint to get URL info based on hostname and path
+
 @app.get("/urlinfo/1/{hostname_and_port}/{original_path_and_query_string}")
-def get_url_info(hostname_and_port: str, original_path_and_query_string: str):
-    hostname = hostname_and_port  # For now, treat as hostname (port parsing can be added)
-    path = original_path_and_query_string
-    logger.info(f"Lookup request: hostname={hostname}, path={path}")
-    url_info = service.lookup(hostname, path)
-    if url_info:
-        return {"data": url_info.dict(by_alias=True), "error": None}
-    else:
-        return {"data": None, "error": "URL not found in database"}
+def get_url_info(
+    hostname_and_port: str,
+    original_path_and_query_string: str,
+    request: Request,
+    _: None = Depends(rate_limiter)
+):
+    client_ip = request.client.host
+    headers = dict(request.headers)
+    logger.info(f"Received request from {client_ip}, headers: {headers}")
+    try:
+        url = normalize_url(hostname_and_port, original_path_and_query_string)
+        if len(url) > URL_LENGTH_LIMIT:
+            logger.error(f"URL too long: {url}")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="URL too long")
+        url_info = service.lookup(hostname_and_port, original_path_and_query_string)
+        if url_info:
+            return {"data": url_info.dict(by_alias=True), "error": None}
+        else:
+            return {"data": None, "error": "URL not found in database"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
