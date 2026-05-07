@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from src.db.mongo_repository import MongoRepository
 from src.services.url_lookup_service import UrlLookupService
@@ -7,16 +8,20 @@ from src.utils.rate_limiter import rate_limiter
 from src.utils.url_utils import normalize_url, is_url_too_long
 from src.config.constants import URL_LENGTH_LIMIT, SEED_SOURCE, LOGGER_NAME
 
-app = FastAPI()
 logger = get_logger(LOGGER_NAME)
+
 
 # Dependency injection
 repository = MongoRepository()
 service = UrlLookupService(repository)
 
+# Provider function for dependency injection
+def get_service() -> UrlLookupService:
+    return service
+
 # Seed the database with initial data on startup if the collection is empty
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     collection = repository.collection
     if collection.count_documents({}) == 0:
         seed_data = [
@@ -39,6 +44,9 @@ def startup_event():
         logger.info("Seed data inserted at startup.")
     else:
         logger.info("Collection already populated. Skipping seed.")
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 # API endpoint to get URL info based on hostname and path
 
@@ -47,7 +55,8 @@ def get_url_info(
     hostname_and_port: str,
     original_path_and_query_string: str,
     request: Request,
-    _: None = Depends(rate_limiter)
+    _: None = Depends(rate_limiter),
+    service: UrlLookupService = Depends(get_service)
 ):
     client_ip = request.client.host
     headers = dict(request.headers)

@@ -14,6 +14,7 @@ They ensure consistency, readability, maintainability, and alignment with **PEPâ
 ## **1. Code Style (PEPâ€¯8 Compliance)**
 
 ### **1.1 Indentation & Layout**
+- Always import modules before using their functions or attributes in your code.
 - Use **4 spaces per indentation level** (never tabs).   [peps.python.org](https://peps.python.org/pep-0008/)  
 - Maximum line length: **79 characters** for code, **72 characters** for docstrings/comments.  
 - Use **implicit line joining** inside parentheses/brackets/braces when breaking long lines.  
