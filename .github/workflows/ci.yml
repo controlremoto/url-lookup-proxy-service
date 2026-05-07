@@ -39,6 +39,14 @@ jobs:
       - name: Build app image
         run: docker compose build
 
+      - name: Show MongoDB connection details
+        run: |
+          echo "MONGO_URI: ${{ secrets.MONGO_URI }}"
+          echo "MONGO_DB_NAME: ${{ vars.MONGO_DB_NAME }}
+          echo "MONGO_COLLECTION_NAME: ${{ vars.MONGO_COLLECTION_NAME }}
+          echo ".env file contents:"
+          cat .env
+
       - name: Run tests with coverage
         run: docker compose run --rm app pytest --cov=src --cov-fail-under=80
 
