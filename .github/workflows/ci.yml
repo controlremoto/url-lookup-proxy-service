@@ -11,8 +11,8 @@ jobs:
     
     env:
       MONGO_URI: ${{ vars.MONGO_URI }}
-      MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
-      MONGO_PASSWORD: ${{ vars.MONGO_PASSWORD }}
+      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
       MONGO_DB_NAME: ${{ vars.MONGO_DB_NAME }}
       MONGO_COLLECTION_NAME: ${{ vars.MONGO_COLLECTION_NAME }}
       ENV_NAME: ${{ vars.ENV_NAME }}
@@ -27,8 +27,8 @@ jobs:
       - name: Create .env file from GitHub secrets and vars
         run: |
           echo "MONGO_URI=${{ vars.MONGO_URI }}" >> .env
-          echo "MONGO_USERNAME=${{ vars.MONGO_USERNAME }}" >> .env
-          echo "MONGO_PASSWORD=${{ vars.MONGO_PASSWORD }}" >> .env
+          echo "MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}" >> .env
+          echo "MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}" >> .env
           echo "ENV_NAME=${{ vars.ENV_NAME }}" >> .env
           echo "LOG_LEVEL=${{ vars.LOG_LEVEL }}" >> .env
 
@@ -37,14 +37,6 @@ jobs:
         
       - name: Build app image
         run: docker compose build
-
-      - name: Show MongoDB connection details
-        run: |
-          echo "MONGO_URI: ${{ vars.MONGO_URI }}"
-          echo ".env contents:"
-          cat .env
-          echo "=== Docker Compose Mongo Service ===="
-          docker compose config | grep -A 20 "mongo:" 
 
       - name: Run tests with coverage
         run: docker compose run --rm app pytest --cov=src --cov-fail-under=80
