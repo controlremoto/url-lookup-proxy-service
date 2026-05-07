@@ -26,7 +26,7 @@ jobs:
 
       - name: Create .env file from GitHub secrets and vars
         run: |
-          echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
+          echo "MONGO_URI=${{ vars.MONGO_URI }}" >> .env
           echo "MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}" >> .env
           echo "MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}" >> .env
           echo "ENV_NAME=${{ vars.ENV_NAME }}" >> .env
@@ -41,10 +41,6 @@ jobs:
       - name: Show MongoDB connection details
         run: |
           echo "MONGO_URI: ${{ vars.MONGO_URI }}"
-          echo "MONGO_DB_NAME: ${{ vars.MONGO_DB_NAME }}
-          echo "MONGO_COLLECTION_NAME: ${{ vars.MONGO_COLLECTION_NAME }}
-          echo ".env file contents:"
-          cat .env
 
       - name: Run tests with coverage
         run: docker compose run --rm app pytest --cov=src --cov-fail-under=80
