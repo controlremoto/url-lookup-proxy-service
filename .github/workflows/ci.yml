@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -11,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MONGO_URI: ${{ vars.MONGO_URI }}
       MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
       MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
       MONGO_DB_NAME: ${{ vars.MONGO_DB_NAME }}
@@ -41,7 +40,7 @@ jobs:
 
       - name: Show MongoDB connection details
         run: |
-          echo "MONGO_URI: ${{ secrets.MONGO_URI }}"
+          echo "MONGO_URI: ${{ vars.MONGO_URI }}"
           echo "MONGO_DB_NAME: ${{ vars.MONGO_DB_NAME }}
           echo "MONGO_COLLECTION_NAME: ${{ vars.MONGO_COLLECTION_NAME }}
           echo ".env file contents:"
