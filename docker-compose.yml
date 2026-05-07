@@ -15,12 +15,14 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - RATE_LIMIT=10
       - RATE_LIMIT_WINDOW=60
+      - PYTHONPATH=:/app/src
     env_file:
       - .env
     depends_on:
       - mongo
     volumes:
       - ./src:/app/src
+      - ./tests:/app/tests
   mongo:
     image: mongo:6.0
     container_name: url-lookup-mongo
