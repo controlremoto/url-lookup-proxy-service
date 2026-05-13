@@ -50,7 +50,7 @@ app = FastAPI(lifespan=lifespan)
 
 # API endpoint to get URL info based on hostname and path
 
-@app.get("/urlinfo/1/{hostname_and_port}/{original_path_and_query_string}")
+@app.get("/urlinfo/1/{hostname_and_port}/{original_path_and_query_string:path}")
 def get_url_info(
     hostname_and_port: str,
     original_path_and_query_string: str,
@@ -59,8 +59,7 @@ def get_url_info(
     service: UrlLookupService = Depends(get_service)
 ):
     client_ip = request.client.host
-    headers = dict(request.headers)
-    logger.info(f"Received request from {client_ip}, headers: {headers}")
+    logger.info(f"Received request from {client_ip} for /urlinfo/1/{hostname_and_port}/{original_path_and_query_string}")
     try:
         norm_host, norm_path_query = normalize_url(hostname_and_port, original_path_and_query_string)
         if is_url_too_long(norm_host, norm_path_query, URL_LENGTH_LIMIT):
