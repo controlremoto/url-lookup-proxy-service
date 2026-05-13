@@ -1,3 +1,10 @@
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/controlremoto/url-lookup-proxy-service/ci.yml)
+![Static Badge](https://img.shields.io/badge/python-v3.11-yellow?style=flat&logo=python)
+![Static Badge](https://img.shields.io/badge/Docker-24.x-blue?style=flat&logo=docker)
+![Static Badge](https://img.shields.io/badge/Mongodb-v6-green?style=flat&logo=mongodb)
+![GitHub forks](https://img.shields.io/github/forks/controlremoto/url-lookup-proxy-service)
+
+
 # URL Lookup Service
 
 An HTTP proxy python API that scans traffic looking for malware URLs before allowing HTTP connections to be made. This proxy asks a service that maintains several databases of malware URLs if the resource being requested is known to contain malware.
@@ -13,7 +20,7 @@ An HTTP proxy python API that scans traffic looking for malware URLs before allo
 
 ## Requirements
 
-- **Python**: 3.11 (see Dockerfile)
+- **Python**: 3.11 (see Dockerfile) 
 - **Docker**: 24.x or newer (recommended)
 - **Docker Compose**: v2.x (Compose V2 syntax)
 - **MongoDB**: 6.0 (see docker-compose.yml)
