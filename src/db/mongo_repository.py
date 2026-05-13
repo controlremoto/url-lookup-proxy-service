@@ -4,7 +4,6 @@ from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 from typing import Optional
 from src.models.url import UrlInfo
 from src.utils.logger import get_logger, log_json
-import os
 from src.config.constants import (
     MONGO_URI_ENV, MONGO_DB_NAME_ENV, MONGO_COLLECTION_NAME_ENV,
     MONGO_USERNAME_ENV, MONGO_PASSWORD_ENV, DB_TIMEOUT_MS, LOGGER_NAME
